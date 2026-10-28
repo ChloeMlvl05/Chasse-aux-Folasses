@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chasse aux collègues</title>
+  <style>
+    :root {
+      --fond: #1f2a44;
+      --carte: #2b3a5e;
+      --accent: #ffb703;
+      --trou: #12192b;
+      --texte: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--fond);
+      color: var(--texte);
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      user-select: none;
+    }
+
+    h1 {
+      margin: 8px 0 4px;
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      text-align: center;
+    }
+
+    .sous-titre {
+      margin: 0 0 14px;
+      opacity: .8;
+      text-align: center;
+    }
+
+    .tableau {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .stat {
+      background: var(--carte);
+      border-radius: 12px;
+      padding: 8px 18px;
+      text-align: center;
+      min-width: 110px;
+    }
+
+    .stat span {
+      display: block;
+      font-size: .75rem;
+      opacity: .7;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .stat strong {
+      font-size: 1.6rem;
+      color: var(--accent);
+    }
+
+    #dernier {
+      height: 28px;
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: var(--accent);
+      text-align: center;
+    }
+
+    .zone {
+      position: relative;
+      width: min(94vw, 560px);
+    }
+
+    .grille {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .trou {
+      position: relative;
+      aspect-ratio: 1 / 1;
+      background: var(--trou);
+      border-radius: 50% / 38%;
+      overflow: hidden;
+      box-shadow: inset 0 -8px 14px rgba(0, 0, 0, .6);
+    }
+
+    .tete {
+      position: absolute;
+      left: 12%;
+      bottom: -100%;
+      width: 76%;
+      height: 76%;
+      border-radius: 50%;
+      border: 4px solid #fff;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(1.1rem, 5vw, 2rem);
+      font-weight: 700;
+      cursor: pointer;
+      transition: bottom .12s ease-out;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, .4);
+    }
+
+    .tete.visible {
+      bottom: 8%;
+    }
+
+    .tete.touchee {
+      animation: boum .25s ease-out;
+    }
+
+    @keyframes boum {
+      0% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.25) rotate(-8deg);
+      }
+
+      100% {
+        transform: scale(.2);
+        opacity: 0;
+      }
+    }
+
+    .nom {
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, .65);
+      padding: 1px 8px;
+      border-radius: 8px;
+      font-size: .7rem;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .ecran {
+      position: absolute;
+      inset: 0;
+      background: rgba(18, 25, 43, .93);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      gap: 10px;
+      z-index: 5;
+    }
+
+    .ecran.cache {
+      display: none;
+    }
+
+    .ecran h2 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
+    .ecran p {
+      margin: 0;
+      opacity: .85;
+    }
+
+    button {
+      background: var(--accent);
+      color: #1f2a44;
+      border: none;
+      border-radius: 999px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      padding: 12px 32px;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+
+    button:hover {
+      filter: brightness(1.1);
+    }
+
+    footer {
+      margin-top: 16px;
+      opacity: .55;
+      font-size: .8rem;
+      text-align: center;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>🎯 Chasse aux grosses follasses </h1>
+  <p class="sous-titre">Clique sur les collègues dès qu'ils sortent de leur trou !</p>
+
+  <div class="tableau">
+    <div class="stat"><span>Score</span><strong id="score">0</strong></div>
+    <div class="stat"><span>Temps</span><strong id="temps">30</strong></div>
+    <div class="stat"><span>Record</span><strong id="record">0</strong></div>
+  </div>
+
+  <div id="dernier"></div>
+
+  <div class="zone">
+    <div class="grille" id="grille"></div>
+
+    <div class="ecran" id="ecranDebut">
+      <h2>Prêt(e) ?</h2>
+      <p>Tu as 30 secondes pour attraper un maximum de follasses.</p>
+      <button id="btnJouer">Jouer</button>
+    </div>
+
+    <div class="ecran cache" id="ecranFin">
+      <h2>Temps écoulé !</h2>
+      <p id="texteFin"></p>
+      <p id="texteRecord"></p>
+      <button id="btnRejouer">Rejouer</button>
+    </div>
+  </div>
+
+  <footer>Un jeu créé pour la bande encore </footer>
+
+  <script>
+    const COLLEGUES = [
+      { nom: "Amélie", photo: "Ame.jpg" },
+      { nom: "Cheryl", photo: "Cheryl.jpg" },
+      { nom: "Pankake", photo: "Chloe.jpg" },
+      { nom: "Clara", photo: "Clara.jpg" },
+      { nom: "Evy", photo: "Evy.jpg" },
+      { nom: "Georgina", photo: "Georgina.jpg" },
+      { nom: "Gwen", photo: "Gwen.jpg" },
+      { nom: "Kass", photo: "Kass.jpg" },
+      { nom: "Keva", photo: "Keva.jpg" },
+      { nom: "Teena", photo: "Teena.jpg" },
+      { nom: "Mira", photo: "Mirah.jpg" },
+    ];
+
+    const DUREE_PARTIE = 30;
+    const NB_TROUS = 12;
+    const COULEURS = ["#e63946", "#f4a261", "#2a9d8f", "#457b9d", "#9b5de5",
+      "#f15bb5", "#00a896", "#ef8354", "#6a994e", "#3d5a80"];
+
+    const grille = document.getElementById("grille");
+    const elScore = document.getElementById("score");
+    const elTemps = document.getElementById("temps");
+    const elRecord = document.getElementById("record");
+    const elDernier = document.getElementById("dernier");
+    const ecranDebut = document.getElementById("ecranDebut");
+    const ecranFin = document.getElementById("ecranFin");
+
+    let score = 0, temps = DUREE_PARTIE, enCours = false;
+    let minuteur = null, boucleApparition = null;
+    let dernierIndex = -1, dernierCollegue = -1;
+    let record = 0;
+
+    try { record = parseInt(localStorage.getItem("recordCollegues")) || 0; } catch (e) { }
+    elRecord.textContent = record;
+
+    /* Construction de la grille */
+    const trous = [];
+    for (let i = 0; i < NB_TROUS; i++) {
+      const trou = document.createElement("div"); trou.className = "trou"; const
+        tete = document.createElement("div"); tete.className = "tete"; trou.appendChild(tete); grille.appendChild(trou);
+      trous.push({ trou, tete, timer: null, actif: false, collegue: null }); const activer = (e) => {
+        e.preventDefault();
+        toucher(i);
+      };
+      tete.addEventListener("pointerdown", activer);
+    }
+
+    function initiales(nom) {
+      const mots = nom.trim().split(/\s+/);
+      return mots.map(m => m[0]).join("").slice(0, 2).toUpperCase();
+    }
+
+    function habiller(tete, index) {
+      const c = COLLEGUES[index];
+      tete.innerHTML = "";
+      tete.style.backgroundImage = "none";
+      tete.style.backgroundColor = COULEURS[index % COULEURS.length];
+      tete.textContent = initiales(c.nom);
+
+      if (c.photo) {
+        const img = new Image();
+        img.onload = () => {
+          tete.style.backgroundImage = `url("${c.photo}")`;
+          tete.textContent = "";
+        };
+        img.src = c.photo;
+      }
+      const etiquette = document.createElement("div");
+      etiquette.className = "nom";
+      etiquette.textContent = c.nom;
+      tete.appendChild(etiquette);
+    }
+
+    function choisirAuHasard(max, exclure) {
+      let n;
+      do { n = Math.floor(Math.random() * max); } while (n === exclure);
+      return n;
+    }
+
+    function faireApparaitre() {
+      if (!enCours) return;
+      const libres = trous.map((t, i) => i).filter(i => !trous[i].actif && i !== dernierIndex);
+      if (libres.length === 0) return;
+
+      const i = libres[Math.floor(Math.random() * libres.length)];
+      const c = choisirAuHasard(COLLEGUES.length, dernierCollegue);
+      dernierIndex = i;
+      dernierCollegue = c;
+
+      const t = trous[i];
+      t.actif = true;
+      t.collegue = c;
+      t.tete.classList.remove("touchee");
+      habiller(t.tete, c);
+      t.tete.classList.add("visible");
+
+      /* Plus la partie avance, plus ils restent peu de temps */
+      const progression = 1 - temps / DUREE_PARTIE;
+      const duree = 1100 - progression * 500;
+      t.timer = setTimeout(() => cacher(i), duree);
+    }
+
+    function cacher(i) {
+      const t = trous[i];
+      clearTimeout(t.timer);
+      t.tete.classList.remove("visible");
+      t.actif = false;
+    }
+
+    function toucher(i) {
+      const t = trous[i];
+      if (!enCours || !t.actif) return;
+      clearTimeout(t.timer);
+      t.actif = false;
+      score++;
+      elScore.textContent = score;
+      elDernier.textContent = "Touché : " + COLLEGUES[t.collegue].nom + "!";
+      t.tete.classList.add("touchee");
+      setTimeout(() => {
+        t.tete.classList.remove("visible", "touchee");
+      }, 230);
+    }
+
+    function planifierApparition() {
+      if (!enCours) return;
+      faireApparaitre();
+      const progression = 1 - temps / DUREE_PARTIE;
+      const delai = 800 - progression * 400;
+      boucleApparition = setTimeout(planifierApparition, delai);
+    }
+
+    function demarrer() {
+      score = 0;
+      temps = DUREE_PARTIE;
+      enCours = true;
+      dernierIndex = -1;
+      dernierCollegue = -1;
+      elScore.textContent = 0;
+      elTemps.textContent = temps;
+      elDernier.textContent = "";
+      ecranDebut.classList.add("cache");
+      ecranFin.classList.add("cache");
+      trous.forEach((_, i) => cacher(i));
+
+      planifierApparition();
+      minuteur = setInterval(() => {
+        temps--;
+        elTemps.textContent = temps;
+        if (temps <= 0) terminer();
+      }, 1000);
+    } function terminer() {
+      enCours = false; clearInterval(minuteur);
+      clearTimeout(boucleApparition); trous.forEach((_, i) => cacher(i));
+
+      let nouveau = false;
+      if (score > record) {
+        record = score;
+        nouveau = true;
+        try { localStorage.setItem("recordCollegues", record); } catch (e) { }
+        elRecord.textContent = record;
+      }
+      document.getElementById("texteFin").textContent =
+        "Tu as attrapé " + score + " collègue" + (score > 1 ? "s" : "") + " !";
+      document.getElementById("texteRecord").textContent =
+        nouveau ? "🏆 Nouveau record !" : "Record à battre : " + record;
+      ecranFin.classList.remove("cache");
+    }
+
+    document.getElementById("btnJouer").addEventListener("click", demarrer);
+    document.getElementById("btnRejouer").addEventListener("click", demarrer);
+
+  </script>
+</body>
+
+</html>
